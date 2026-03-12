@@ -35,7 +35,7 @@ export const testConnection = async () => {
   }
 };
 
-// مثال على إضافة بيانات
+// مثالل على إضافة بيانات
 export const insertData = async (table: string, data: any) => {
   const { data: result, error } = await supabase
     .from(table)
