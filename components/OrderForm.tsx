@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, Measurements, Customer } from '../types';
 import { storage } from '../services/storage';
+import { createOrder, updateOrder } from '../services/supabase';
 import AbayaDiagram from './AbayaDiagram';
 import { Save, Printer, ArrowRight, UserPlus, Search, Info } from 'lucide-react';
 
@@ -68,15 +69,37 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
     }));
   }, [totalStr, paidStr, discountStr, shippingStr]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!order.customerName || !order.customerPhone) {
       alert('يرجى إدخال اسم العميل ورقمه');
       return;
     }
     const finalOrder = order as Order;
-    storage.saveOrder(finalOrder);
-    storage.updateCustomerFromOrder(finalOrder);
-    onComplete();
+    
+    try {
+      // حفظ في localStorage للتوافق
+      storage.saveOrder(finalOrder);
+      storage.updateCustomerFromOrder(finalOrder);
+      
+      // حفظ في Supabase
+      if (initialOrder && initialOrder.id) {
+        // تحديث طلب موجود
+        await updateOrder(initialOrder.id, {
+          status: finalOrder.status,
+          paidAmount: finalOrder.paidAmount,
+          totalAmount: finalOrder.totalAmount,
+          remainingAmount: finalOrder.remainingAmount
+        });
+      } else {
+        // إنشاء طلب جديد
+        await createOrder(finalOrder);
+      }
+      
+      onComplete();
+    } catch (error) {
+      console.error('خطأ في حفظ الطلب:', error);
+      alert('حدث خطأ في حفظ الطلب. يرجى المحاولة مرة أخرى.');
+    }
   };
 
   const handleMeasurementChange = (key: keyof Measurements, value: string) => {

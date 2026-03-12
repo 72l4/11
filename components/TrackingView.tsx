@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Order, OrderStatus } from '../types';
-import { storage } from '../services/storage';
+import { getOrderById } from '../services/supabase';
 import { CheckCircle2, Clock, Truck, Package, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 
 interface TrackingViewProps {
@@ -11,15 +11,26 @@ interface TrackingViewProps {
 }
 
 const TrackingView: React.FC<TrackingViewProps> = ({ order: initialOrder, onBack }) => {
-  const { orderId } = useParams<{ orderId: string }>();
+  const { orderId: paramOrderId } = useParams<{ orderId: string }>();
+  const [searchParams] = useSearchParams();
+  const queryOrderId = searchParams.get('id');
+  const orderId = paramOrderId || queryOrderId;
+  
   const [order, setOrder] = useState<Order | undefined>(initialOrder);
   const [loading, setLoading] = useState(!initialOrder);
 
   useEffect(() => {
     if (!initialOrder && orderId) {
-      const foundOrder = storage.getOrders().find(o => o.id === orderId);
-      setOrder(foundOrder);
-      setLoading(false);
+      // جلب الطلب من Supabase بدلاً من localStorage
+      getOrderById(orderId)
+        .then(foundOrder => {
+          setOrder(foundOrder as Order);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('خطأ في جلب الطلب:', error);
+          setLoading(false);
+        });
     }
   }, [orderId, initialOrder]);
 

@@ -125,6 +125,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/track/:orderId" element={<TrackingView />} />
+      <Route path="/tracking" element={<TrackingView />} />
       <Route path="/admin/*" element={<AdminPanel />} />
       <Route path="/" element={<Navigate to="/admin" replace />} />
     </Routes>

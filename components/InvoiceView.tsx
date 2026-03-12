@@ -15,7 +15,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ order, onClose }) => {
   };
 
   const handleWhatsApp = () => {
-    const trackingUrl = `${window.location.origin}/track/${order.id}`;
+    const trackingUrl = `https://alaa-gamma.vercel.app/tracking?id=${order.id}`;
     const message = `مرحباً بكِ أ. ${order.customerName} 🌸
 
 فاتورة طلبك من Cute Base Abaya جاهزة.
