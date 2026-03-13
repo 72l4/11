@@ -21,8 +21,11 @@ const TrackingView: React.FC<TrackingViewProps> = ({ order: initialOrder, onBack
 
   useEffect(() => {
     if (!initialOrder && orderNo) {
-      // جلب الطلب من Supabase باستخدام order_no
-      getOrderByOrderNo(orderNo)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNo);
+      const fetchOrder = isUuid ? getOrderById(orderNo) : getOrderByOrderNo(orderNo);
+
+      // جلب الطلب من Supabase باستخدام order_no أو id
+      fetchOrder
         .then(foundOrder => {
           setOrder(foundOrder as Order);
           setLoading(false);
