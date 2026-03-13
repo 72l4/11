@@ -126,6 +126,8 @@ export const createOrder = async (order: any) => {
       discount: order.discount,
       shipping: order.shipping,
       status: order.status,
+      image_url: order.imageUrl || null, // إضافة صورة
+      estimated_delivery_date: order.estimatedDeliveryDate || null, // إضافة تاريخ الاستلام
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }]);
@@ -256,6 +258,8 @@ export const getOrderByOrderNo = async (orderNo: string) => {
       discount: data.discount,
       shipping: data.shipping,
       status: data.status,
+      imageUrl: data.image_url, // إضافة صورة
+      estimatedDeliveryDate: data.estimated_delivery_date, // إضافة تاريخ الاستلام
       createdAt: new Date(data.created_at).getTime()
     };
   }

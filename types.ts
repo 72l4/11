@@ -44,6 +44,8 @@ export interface Order {
   shipping: number;
   status: OrderStatus;
   createdAt: number;
+  imageUrl?: string; // صورة التصميم أو المنتج
+  estimatedDeliveryDate?: string; // التاريخ المتوقع للاستلام
 }
 
 export type ViewType = 'dashboard' | 'new-order' | 'orders' | 'customers' | 'reports' | 'tracking';
