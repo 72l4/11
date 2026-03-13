@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Order, OrderStatus } from '../types';
-import { getOrderById } from '../services/supabase';
+import { getOrderByOrderNo } from '../services/supabase';
 import { CheckCircle2, Clock, Truck, Package, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 
 interface TrackingViewProps {
@@ -13,16 +13,16 @@ interface TrackingViewProps {
 const TrackingView: React.FC<TrackingViewProps> = ({ order: initialOrder, onBack }) => {
   const { orderId: paramOrderId } = useParams<{ orderId: string }>();
   const [searchParams] = useSearchParams();
-  const queryOrderId = searchParams.get('id');
-  const orderId = paramOrderId || queryOrderId;
+  const queryOrderNo = searchParams.get('orderNo');
+  const orderNo = paramOrderId || queryOrderNo;
   
   const [order, setOrder] = useState<Order | undefined>(initialOrder);
   const [loading, setLoading] = useState(!initialOrder);
 
   useEffect(() => {
-    if (!initialOrder && orderId) {
-      // جلب الطلب من Supabase بدلاً من localStorage
-      getOrderById(orderId)
+    if (!initialOrder && orderNo) {
+      // جلب الطلب من Supabase باستخدام order_no
+      getOrderByOrderNo(orderNo)
         .then(foundOrder => {
           setOrder(foundOrder as Order);
           setLoading(false);
@@ -32,7 +32,7 @@ const TrackingView: React.FC<TrackingViewProps> = ({ order: initialOrder, onBack
           setLoading(false);
         });
     }
-  }, [orderId, initialOrder]);
+  }, [orderNo, initialOrder]);
 
   if (loading) {
     return (

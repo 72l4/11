@@ -214,6 +214,55 @@ export const getOrderById = async (orderId: string) => {
   return null;
 };
 
+// جلب طلب واحد من Supabase باستخدام order_no
+export const getOrderByOrderNo = async (orderNo: string) => {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('order_no', orderNo)
+    .single();
+
+  if (error) {
+    console.error('خطأ في جلب الطلب:', error);
+    return null;
+  }
+
+  // تحويل أسماء الأعمدة من snake_case إلى camelCase
+  if (data) {
+    return {
+      id: data.id,
+      orderNo: data.order_no,
+      date: data.date,
+      customerId: data.customer_id,
+      customerName: data.customer_name,
+      customerPhone: data.customer_phone,
+      customerAddress: data.customer_address,
+      abayaNo: data.abaya_no,
+      designName: data.design_name,
+      color: data.color,
+      fabric: data.fabric,
+      notes: data.notes,
+      measurements: {
+        sleeveFromNeck: data.sleeve_from_neck,
+        arms: data.arms,
+        bust: data.bust,
+        sleeveWidth: data.sleeve_width,
+        waist: data.waist,
+        abayaLength: data.abaya_length
+      },
+      totalAmount: data.total_amount,
+      paidAmount: data.paid_amount,
+      remainingAmount: data.remaining_amount,
+      discount: data.discount,
+      shipping: data.shipping,
+      status: data.status,
+      createdAt: new Date(data.created_at).getTime()
+    };
+  }
+
+  return null;
+};
+
 // جلب جميع الطلبات
 export const getAllOrders = async () => {
   const { data, error } = await supabase
