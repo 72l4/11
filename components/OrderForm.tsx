@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, Measurements, Customer } from '../types';
 import { storage } from '../services/storage';
-// تم إضافة uploadOrderImage هنا
-import { createOrder, updateOrder, uploadOrderImage } from '../services/supabase';
+import { createOrder, updateOrder } from '../services/supabase'; // تم حذف uploadOrderImage
 import AbayaDiagram from './AbayaDiagram';
-import { Save, Printer, ArrowRight, UserPlus, Search, Info, Upload } from 'lucide-react';
+import { Save, UserPlus, Search } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order;
@@ -18,9 +17,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
   const [discountStr, setDiscountStr] = useState(initialOrder?.discount?.toString() || '0');
   const [shippingStr, setShippingStr] = useState(initialOrder?.shipping?.toString() || '0');
   
-  // حالة الصورة
-  const [imageFile, setImageFile] = useState<File | null>(null);
-
   const [order, setOrder] = useState<Partial<Order>>(initialOrder || {
     id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(),
     orderNo: `INV-${Date.now().toString().slice(-6)}`,
@@ -78,15 +74,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
     }
 
     try {
-      let imageUrl = order.imageUrl;
-
-      // إذا اختار المستخدم صورة جديدة، نرفعها أولاً
-      if (imageFile) {
-        const uploadedUrl = await uploadOrderImage(imageFile, order.id!);
-        if (uploadedUrl) imageUrl = uploadedUrl;
-      }
-
-      const finalOrder = { ...order, imageUrl } as Order;
+      // حفظ البيانات مباشرة بدون معالجة صور
+      const finalOrder = { ...order } as Order;
       
       storage.saveOrder(finalOrder);
       storage.updateCustomerFromOrder(finalOrder);
@@ -103,8 +92,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
       alert('حدث خطأ أثناء الحفظ. تأكد من إعدادات الاتصال.');
     }
   };
-
-  // ... باقي الدوال (handleMeasurementChange, selectCustomer) تبقى كما هي
 
   const handleMeasurementChange = (key: keyof Measurements, value: string) => {
     setOrder(prev => ({
@@ -129,7 +116,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
 
   return (
     <div className="pb-20">
-      {/* ... (الجزء العلوي من الواجهة يظل كما هو) */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-gray-800">{initialOrder ? 'تعديل فاتورة' : 'إنشاء فاتورة جديدة'}</h2>
         <button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 bg-pink-600 text-white rounded-xl">
@@ -139,21 +125,8 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* ... (باقي أقسام بيانات العميل) */}
-          
-          <section className="bg-white rounded-3xl p-8 border border-pink-50 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">رفع صورة الفاتورة</h3>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files && setImageFile(e.target.files[0])}
-              className="w-full p-4 border-2 border-dashed border-pink-200 rounded-xl text-pink-600"
-            />
-            {imageFile && <p className="mt-2 text-sm text-green-600">تم اختيار: {imageFile.name}</p>}
-          </section>
+          {/* هنا تم حذف قسم رفع الصورة بالكامل */}
         </div>
-        
-        {/* ... (باقي الواجهة الجانبية) */}
       </div>
     </div>
   );
