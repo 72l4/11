@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Order, OrderStatus, Measurements, Customer } from '../types';
 import { storage } from '../services/storage';
-import { createOrder, updateOrder } from '../services/supabase'; // تم حذف uploadOrderImage
-import AbayaDiagram from './AbayaDiagram';
-import { Save, UserPlus, Search } from 'lucide-react';
+import { createOrder } from '../services/firebase'; // الربط بـ Firebase
+import { Save } from 'lucide-react';
 
 interface OrderFormProps {
   initialOrder?: Order;
@@ -14,8 +13,6 @@ interface OrderFormProps {
 const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint }) => {
   const [totalStr, setTotalStr] = useState(initialOrder?.totalAmount?.toString() || '0');
   const [paidStr, setPaidStr] = useState(initialOrder?.paidAmount?.toString() || '0');
-  const [discountStr, setDiscountStr] = useState(initialOrder?.discount?.toString() || '0');
-  const [shippingStr, setShippingStr] = useState(initialOrder?.shipping?.toString() || '0');
   
   const [order, setOrder] = useState<Partial<Order>>(initialOrder || {
     id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(),
@@ -23,109 +20,70 @@ const OrderForm: React.FC<OrderFormProps> = ({ initialOrder, onComplete, onPrint
     date: new Date().toISOString().split('T')[0],
     customerName: '',
     customerPhone: '',
-    customerAddress: '',
-    abayaNo: '',
-    designName: '',
-    color: '',
-    fabric: '',
-    notes: '',
-    measurements: {
-      sleeveFromNeck: '',
-      arms: '',
-      bust: '',
-      sleeveWidth: '',
-      waist: '',
-      abayaLength: ''
-    },
-    totalAmount: 0,
-    paidAmount: 0,
-    remainingAmount: 0,
-    discount: 0,
-    shipping: 0,
     status: OrderStatus.IN_PROGRESS,
-    createdAt: Date.now()
+    measurements: {
+      sleeveFromNeck: '', arms: '', bust: '', sleeveWidth: '', waist: '', abayaLength: ''
+    }
   });
-
-  const [customerSearch, setCustomerSearch] = useState('');
-  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const customers = storage.getCustomers();
 
   useEffect(() => {
     const total = Number(totalStr) || 0;
-    const discount = Number(discountStr) || 0;
-    const shipping = Number(shippingStr) || 0;
     const paid = Number(paidStr) || 0;
-    const finalTotal = total - discount + shipping;
-    
     setOrder(prev => ({
       ...prev,
       totalAmount: total,
-      discount: discount,
-      shipping: shipping,
       paidAmount: paid,
-      remainingAmount: Number((finalTotal - paid).toFixed(3))
+      remainingAmount: total - paid
     }));
-  }, [totalStr, paidStr, discountStr, shippingStr]);
+  }, [totalStr, paidStr]);
 
   const handleSave = async () => {
     if (!order.customerName || !order.customerPhone) {
-      alert('يرجى إدخال اسم العميل ورقمه');
+      alert('يرجى إدخال البيانات الأساسية');
       return;
     }
 
     try {
-      // حفظ البيانات مباشرة بدون معالجة صور
       const finalOrder = { ...order } as Order;
       
+      // حفظ محلي
       storage.saveOrder(finalOrder);
-      storage.updateCustomerFromOrder(finalOrder);
       
-      if (initialOrder && initialOrder.id) {
-        await updateOrder(initialOrder.id, finalOrder);
-      } else {
-        await createOrder(finalOrder);
-      }
+      // حفظ في Firebase
+      await createOrder(finalOrder);
       
+      alert('تم حفظ الطلب بنجاح في Firebase! ✨');
       onComplete();
     } catch (error) {
-      console.error('خطأ في حفظ الطلب:', error);
-      alert('حدث خطأ أثناء الحفظ. تأكد من إعدادات الاتصال.');
+      alert('فشل الحفظ. تأكد من إعدادات Firebase Test Mode.');
     }
   };
 
-  const handleMeasurementChange = (key: keyof Measurements, value: string) => {
-    setOrder(prev => ({
-      ...prev,
-      measurements: {
-        ...prev.measurements!,
-        [key]: value
-      }
-    }));
-  };
-
-  const selectCustomer = (c: Customer) => {
-    setOrder(prev => ({
-      ...prev,
-      customerName: c.name,
-      customerPhone: c.phone,
-      customerAddress: c.address,
-      measurements: c.lastMeasurements || prev.measurements
-    }));
-    setShowCustomerSearch(false);
-  };
-
   return (
-    <div className="pb-20">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-gray-800">{initialOrder ? 'تعديل فاتورة' : 'إنشاء فاتورة جديدة'}</h2>
-        <button onClick={handleSave} className="flex items-center gap-2 px-8 py-2 bg-pink-600 text-white rounded-xl">
-          <Save size={18} /> <span>حفظ الطلب</span>
+    <div className="p-4 bg-white rounded-xl shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">فاتورة جديدة</h2>
+        <button onClick={handleSave} className="bg-pink-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+          <Save size={18} /> حفظ
         </button>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* هنا تم حذف قسم رفع الصورة بالكامل */}
+      
+      <div className="space-y-4">
+        <input 
+          placeholder="اسم الزبونة" 
+          className="w-full p-3 border rounded-lg"
+          value={order.customerName}
+          onChange={e => setOrder({...order, customerName: e.target.value})}
+        />
+        <input 
+          placeholder="رقم الهاتف" 
+          className="w-full p-3 border rounded-lg"
+          value={order.customerPhone}
+          onChange={e => setOrder({...order, customerPhone: e.target.value})}
+        />
+        <div className="grid grid-cols-2 gap-4">
+          <input placeholder="الإجمالي" type="number" value={totalStr} onChange={e => setTotalStr(e.target.value)} className="p-3 border rounded-lg" />
+          <input placeholder="المدفوع" type="number" value={paidStr} onChange={e => setPaidStr(e.target.value)} className="p-3 border rounded-lg" />
         </div>
       </div>
     </div>
